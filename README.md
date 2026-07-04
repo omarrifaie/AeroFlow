@@ -13,7 +13,7 @@ datasets, loads them into a local **DuckDB** warehouse, transforms them with
 orchestrates the whole thing behind a small **Typer CLI**, validates every change
 in **GitHub Actions CI**, and visualises the results with an **Evidence.dev**
 "BI-as-code" dashboard. The same dbt models run on **Snowflake** by switching a
-single target — so this repo doubles as a portable ELT reference.
+single target - so this repo doubles as a portable ELT reference.
 
 > Built by **Omar Rifaie**.
 
@@ -52,7 +52,7 @@ flowchart LR
     CI["GitHub Actions CI<br/>ruff · dbt build · sqlfluff"] -.validates.-> dbt
 ```
 
-Data flows one way — **ingest → load → transform → visualise** — with tests and
+Data flows one way - **ingest → load → transform → visualise** — with tests and
 lint gates at every boundary. See [`docs/architecture.md`](docs/architecture.md)
 for a layer-by-layer breakdown and [`docs/data_dictionary.md`](docs/data_dictionary.md)
 for every mart column.
@@ -76,7 +76,7 @@ for every mart column.
 
 - **Python 3.11+**
 - **Node 18+** (only for the dashboard)
-- No cloud account and no API keys required — the data source is public and the
+- No cloud account and no API keys required - the data source is public and the
   default warehouse is a local DuckDB file.
 
 ---
@@ -131,7 +131,7 @@ dbt build --target snowflake
 The `snowflake` target in [`transform/profiles.yml`](transform/profiles.yml)
 reads `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PASSWORD`,
 `SNOWFLAKE_ROLE`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE` and
-`SNOWFLAKE_SCHEMA` from the environment. No model SQL changes are required — only
+`SNOWFLAKE_SCHEMA` from the environment. No model SQL changes are required - only
 the target switches.
 
 ---
@@ -187,4 +187,4 @@ pre-commit install # optional: run the gates on every commit
   and routes. © OpenFlights contributors, distributed under the
   [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/).
   AeroFlow downloads these files at run time and does not redistribute them.
-- **Code:** MIT — see [LICENSE](LICENSE).
+- **Code:** MIT - see [LICENSE](LICENSE).
