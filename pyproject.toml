@@ -1,0 +1,56 @@
+[project]
+name = "aeroflow"
+version = "1.0.0"
+description = "End-to-end analytics-engineering pipeline over global flight-network data (OpenFlights -> DuckDB -> dbt -> Evidence)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Omar Rifaie" }]
+keywords = ["analytics-engineering", "dbt", "duckdb", "elt", "openflights", "snowflake"]
+
+# Runtime dependencies needed to ingest data and build the warehouse.
+dependencies = [
+    "duckdb>=1.1,<2.0",
+    "requests>=2.31,<3.0",
+    "typer>=0.12,<1.0",
+    "dbt-core>=1.8,<2.0",
+    "dbt-duckdb>=1.8,<2.0",
+]
+
+[project.optional-dependencies]
+# Quality gates + local tooling (installed in CI and via `make setup`).
+dev = [
+    "ruff>=0.6",
+    "sqlfluff>=3.0",
+    "sqlfluff-templater-dbt>=3.0",
+    "pre-commit>=3.7",
+]
+
+[project.scripts]
+aeroflow = "pipeline.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["ingestion", "pipeline"]
+
+# ---------------------------------------------------------------------------
+# Ruff: Python linter + formatter
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", "dashboard", "transform/dbt_packages", "transform/target"]
+
+[tool.ruff.lint]
+# A pragmatic, readable rule set: pyflakes, pycodestyle, isort, bugbear,
+# comprehensions, pyupgrade, and simplify.
+select = ["E", "F", "I", "B", "C4", "UP", "SIM"]
+ignore = [
+    "E501",  # line length is enforced by the formatter, not the linter
+]
+
+[tool.ruff.format]
+quote-style = "double"

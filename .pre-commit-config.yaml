@@ -1,0 +1,33 @@
+# pre-commit hooks for AeroFlow.
+#
+# Uses the tools installed in the project environment (`make setup`, i.e.
+# `pip install -e ".[dev]"`) so hook versions always match CI. Enable with:
+#
+#     pre-commit install
+#
+# The SQL hook skips models/intermediate/ (see that folder's .sqlfluffignore for
+# why the haversine model is excluded from the parser).
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff (lint)
+        entry: ruff check --fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff (format)
+        entry: ruff format
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: sqlfluff-lint
+        name: sqlfluff (lint dbt models)
+        entry: sqlfluff lint
+        language: system
+        files: ^transform/models/.*\.sql$
+        exclude: ^transform/models/intermediate/
+        require_serial: true
