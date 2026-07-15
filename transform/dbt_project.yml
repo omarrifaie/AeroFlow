@@ -1,0 +1,43 @@
+name: "aeroflow"
+version: "1.0.0"
+config-version: 2
+
+# This profile is resolved from the profiles.yml that ships in this same
+# directory (the pipeline CLI passes --profiles-dir transform).
+profile: "aeroflow"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+# Layered warehouse: staging (views) -> intermediate (tables) -> marts (tables).
+# Each layer lands in its own schema (see the generate_schema_name macro, which
+# uses the custom schema name verbatim instead of prefixing the target schema).
+models:
+  aeroflow:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  aeroflow:
+    +schema: marts
+    seed_region_lookup:
+      +column_types:
+        country: varchar
+        region: varchar

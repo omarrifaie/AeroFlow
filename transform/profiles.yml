@@ -1,0 +1,31 @@
+# dbt connection profiles for AeroFlow.
+#
+# The SAME models run on either target: DuckDB locally (default) or Snowflake in
+# the cloud. Switch with `dbt build --target snowflake` once the SNOWFLAKE_* env
+# vars are set (see .env.example). No model SQL changes are required.
+aeroflow:
+  target: duckdb
+  outputs:
+    # --- Local analytics warehouse (default) -------------------------------
+    # Relative path resolves against the dbt working directory (transform/),
+    # which the pipeline CLI and Makefile always cd into before invoking dbt.
+    duckdb:
+      type: duckdb
+      path: "aeroflow.duckdb"
+      database: "aeroflow"
+      schema: "main"
+      threads: 4
+
+    # --- Snowflake (portability proof) -------------------------------------
+    # Reads everything from the environment so no secrets live in the repo.
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'AEROFLOW') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'MAIN') }}"
+      threads: 4
+      client_session_keep_alive: false
