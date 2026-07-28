@@ -1,0 +1,107 @@
+version: 2
+
+models:
+  - name: stg_airports
+    description: >
+      Cleaned, typed, one-row-per-airport view over the raw airports feed.
+      Names are snake_cased, coordinates and altitude are numeric, and blank /
+      "\N" tokens are NULL. Rows without an airport id are dropped.
+    columns:
+      - name: airport_id
+        description: "Unique airport identifier. Primary key."
+        data_tests:
+          - not_null
+          - unique
+      - name: airport_name
+        description: "Airport name."
+      - name: city
+        description: "City served by the airport."
+      - name: country
+        description: "Country the airport is located in."
+      - name: iata_code
+        description: "3-letter IATA code, or NULL if the airport has none."
+      - name: icao_code
+        description: "4-letter ICAO code, or NULL if the airport has none."
+      - name: latitude
+        description: "Decimal latitude in degrees."
+        data_tests:
+          - not_null
+      - name: longitude
+        description: "Decimal longitude in degrees."
+        data_tests:
+          - not_null
+      - name: altitude_ft
+        description: "Airport elevation in feet."
+      - name: timezone_offset_hours
+        description: "UTC offset in hours (may be fractional)."
+      - name: dst
+        description: "Daylight-savings-time rule code (E, A, S, O, Z, N, U)."
+      - name: tz_name
+        description: "IANA/Olson time-zone name (e.g. America/New_York)."
+      - name: airport_type
+        description: "Record type as published by OpenFlights (e.g. airport)."
+      - name: data_source
+        description: "OpenFlights provenance of the row (e.g. OurAirports)."
+
+  - name: stg_airlines
+    description: >
+      Cleaned, typed, one-row-per-airline view over the raw airlines feed. The
+      source "active" flag is normalised into an uppercase code and a boolean.
+    columns:
+      - name: airline_id
+        description: "Unique airline identifier. Primary key."
+        data_tests:
+          - not_null
+          - unique
+      - name: airline_name
+        description: "Airline name."
+      - name: alias
+        description: "Alternate airline name, or NULL."
+      - name: iata_code
+        description: "2-letter IATA airline code, or NULL."
+      - name: icao_code
+        description: "3-letter ICAO airline code, or NULL."
+      - name: callsign
+        description: "Radio callsign, or NULL."
+      - name: country
+        description: "Country the airline is registered in."
+      - name: active_code
+        description: "Normalised active flag: 'Y' (active) or 'N' (defunct)."
+        data_tests:
+          - accepted_values:
+              values: ["Y", "N"]
+      - name: is_active
+        description: "Boolean convenience flag, TRUE when the airline is active."
+        data_tests:
+          - not_null
+
+  - name: stg_routes
+    description: >
+      Cleaned, typed view over the raw routes feed. One row per
+      airline / source-airport / destination-airport. Rows missing an airport id
+      or forming a self-loop are dropped so downstream distances are well defined.
+    columns:
+      - name: airline_code
+        description: "2-letter IATA (or 3-letter ICAO) code of the operating airline."
+      - name: airline_id
+        description: "OpenFlights airline id of the operating airline (may be NULL)."
+      - name: source_airport_code
+        description: "IATA/ICAO code of the origin airport."
+      - name: source_airport_id
+        description: "OpenFlights airport id of the origin."
+        data_tests:
+          - not_null
+      - name: destination_airport_code
+        description: "IATA/ICAO code of the destination airport."
+      - name: destination_airport_id
+        description: "OpenFlights airport id of the destination."
+        data_tests:
+          - not_null
+      - name: is_codeshare
+        description: "TRUE when the route is operated as a codeshare."
+        data_tests:
+          - not_null
+      - name: stops
+        description: "Number of intermediate stops (usually 0 for direct routes)."
+      - name: equipment
+        description: "Space-separated aircraft type codes flown on the route."
