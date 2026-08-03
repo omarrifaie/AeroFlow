@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: int_routes_enriched
+    description: >
+      One row per route (airline / source / destination) enriched with source
+      and destination airport attributes and the great-circle distance between
+      the two airports (haversine, kilometres). Routes referencing an unknown
+      airport are dropped by the inner joins.
+    columns:
+      - name: airline_code
+        description: "IATA/ICAO code of the operating airline."
+      - name: airline_id
+        description: "OpenFlights airline id (may be NULL when unknown)."
+      - name: source_airport_id
+        description: "Origin airport id (FK to stg_airports)."
+        data_tests:
+          - not_null
+      - name: source_airport_code
+        description: "Origin airport IATA/ICAO code."
+      - name: source_airport_name
+        description: "Origin airport name."
+      - name: source_city
+        description: "Origin city."
+      - name: source_country
+        description: "Origin country."
+      - name: source_latitude
+        description: "Origin latitude in degrees."
+      - name: source_longitude
+        description: "Origin longitude in degrees."
+      - name: destination_airport_id
+        description: "Destination airport id (FK to stg_airports)."
+        data_tests:
+          - not_null
+      - name: destination_airport_code
+        description: "Destination airport IATA/ICAO code."
+      - name: destination_airport_name
+        description: "Destination airport name."
+      - name: destination_city
+        description: "Destination city."
+      - name: destination_country
+        description: "Destination country."
+      - name: destination_latitude
+        description: "Destination latitude in degrees."
+      - name: destination_longitude
+        description: "Destination longitude in degrees."
+      - name: is_codeshare
+        description: "TRUE when the route is a codeshare."
+      - name: stops
+        description: "Number of intermediate stops."
+      - name: equipment
+        description: "Space-separated aircraft type codes."
+      - name: distance_km
+        description: "Great-circle distance between the airports, in kilometres."
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 20100  # slightly above Earth's max airport-to-airport great-circle distance
+              strictly: false

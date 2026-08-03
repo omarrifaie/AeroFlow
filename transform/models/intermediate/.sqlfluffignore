@@ -1,0 +1,7 @@
+# int_routes_enriched calls the haversine_km macro inline. The resulting nested
+# trigonometric expression is valid SQL (dbt compiles and runs it on both DuckDB
+# and Snowflake, and it is covered by the not_null / range / positive-distance
+# tests), but it exceeds sqlfluff's hardcoded parser recursion limit (PRS:
+# "Maximum parse depth exceeded") on the duckdb dialect. Exclude just this file
+# from linting rather than contorting the model to satisfy the parser.
+int_routes_enriched.sql
