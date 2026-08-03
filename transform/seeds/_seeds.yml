@@ -1,0 +1,22 @@
+version: 2
+
+seeds:
+  - name: seed_region_lookup
+    description: >
+      Static country -> continental region lookup used to add a `region`
+      attribute to dim_airport (and, transitively, the airport marts). Covers
+      every country present in the OpenFlights airports feed.
+    columns:
+      - name: country
+        description: "Country name, matching the OpenFlights spelling exactly."
+        data_tests:
+          - not_null
+          - unique
+      - name: region
+        description: "Continental region the country belongs to."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values:
+                ["North America", "South America", "Europe", "Africa", "Asia",
+                 "Oceania", "Antarctica"]
