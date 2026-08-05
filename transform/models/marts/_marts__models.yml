@@ -1,0 +1,236 @@
+version: 2
+
+models:
+  - name: dim_airport
+    description: >
+      Airport dimension, one row per airport, enriched with a continental region
+      from the region seed. Grain: airport_id.
+    columns:
+      - name: airport_id
+        description: "Airport surrogate/natural key. Primary key."
+        data_tests:
+          - not_null
+          - unique
+      - name: iata_code
+        description: "3-letter IATA code (nullable)."
+      - name: icao_code
+        description: "4-letter ICAO code (nullable)."
+      - name: airport_name
+        description: "Airport name."
+      - name: city
+        description: "City served."
+      - name: country
+        description: "Country the airport is in."
+      - name: region
+        description: "Continental region derived from the country via the region seed."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values:
+                ["North America", "South America", "Europe", "Africa", "Asia",
+                 "Oceania", "Antarctica", "Other"]
+      - name: latitude
+        description: "Decimal latitude in degrees."
+      - name: longitude
+        description: "Decimal longitude in degrees."
+      - name: altitude_ft
+        description: "Elevation in feet."
+      - name: timezone_offset_hours
+        description: "UTC offset in hours."
+      - name: tz_name
+        description: "IANA time-zone name."
+      - name: airport_type
+        description: "Record type as published by OpenFlights."
+
+  - name: dim_airline
+    description: "Airline dimension, one row per airline. Grain: airline_id."
+    columns:
+      - name: airline_id
+        description: "Airline key. Primary key."
+        data_tests:
+          - not_null
+          - unique
+      - name: airline_name
+        description: "Airline name."
+      - name: alias
+        description: "Alternate name (nullable)."
+      - name: iata_code
+        description: "2-letter IATA airline code (nullable)."
+      - name: icao_code
+        description: "3-letter ICAO airline code (nullable)."
+      - name: callsign
+        description: "Radio callsign (nullable)."
+      - name: country
+        description: "Country of registration."
+      - name: active_code
+        description: "Normalised active flag: 'Y' or 'N'."
+        data_tests:
+          - accepted_values:
+              values: ["Y", "N"]
+      - name: is_active
+        description: "TRUE when the airline is currently active."
+        data_tests:
+          - not_null
+
+  - name: fct_route
+    description: >
+      Route fact table (star-schema centre). Grain: one row per
+      airline / source-airport / destination-airport. Foreign keys reference
+      dim_airline and dim_airport.
+    data_tests:
+      # dbt_expectations #1: the fact table must never be empty.
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1
+    columns:
+      - name: route_id
+        description: "Surrogate key over (airline_code, source_airport_id, destination_airport_id)."
+        data_tests:
+          - not_null
+          - unique
+      - name: airline_id
+        description: "FK to dim_airline (nullable when the airline is unknown)."
+        data_tests:
+          - relationships:
+              to: ref('dim_airline')
+              field: airline_id
+      - name: source_airport_id
+        description: "FK to dim_airport (origin)."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_airport')
+              field: airport_id
+      - name: destination_airport_id
+        description: "FK to dim_airport (destination)."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_airport')
+              field: airport_id
+      - name: airline_code
+        description: "IATA/ICAO code of the operating airline."
+      - name: source_airport_code
+        description: "Origin airport IATA/ICAO code."
+      - name: destination_airport_code
+        description: "Destination airport IATA/ICAO code."
+      - name: is_codeshare
+        description: "TRUE when the route is a codeshare."
+        data_tests:
+          - not_null
+      - name: stops
+        description: "Number of intermediate stops."
+      - name: equipment
+        description: "Space-separated aircraft type codes."
+      - name: distance_km
+        description: "Great-circle distance between endpoints, in kilometres. Always > 0."
+        data_tests:
+          - not_null
+          # dbt_expectations #2: distances sit within physically plausible bounds.
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 20100
+              strictly: false
+
+  - name: mart_busiest_airports
+    description: >
+      Airport connectivity leaderboard: departing + arriving route counts and a
+      total, ranked. Grain: airport_id (only airports on at least one route).
+    columns:
+      - name: airport_id
+        description: "Airport key. Primary key."
+        data_tests:
+          - not_null
+          - unique
+      - name: iata_code
+        description: "IATA code (nullable)."
+      - name: airport_name
+        description: "Airport name."
+      - name: city
+        description: "City served."
+      - name: country
+        description: "Country."
+      - name: region
+        description: "Continental region."
+      - name: latitude
+        description: "Latitude in degrees."
+      - name: longitude
+        description: "Longitude in degrees."
+      - name: departure_routes
+        description: "Number of distinct routes departing this airport."
+        data_tests:
+          - not_null
+      - name: arrival_routes
+        description: "Number of distinct routes arriving at this airport."
+        data_tests:
+          - not_null
+      - name: total_routes
+        description: "departure_routes + arrival_routes."
+        data_tests:
+          - not_null
+      - name: airport_rank
+        description: "Dense ordering by total_routes (1 = busiest)."
+        data_tests:
+          - not_null
+          - unique
+
+  - name: mart_airline_reach
+    description: >
+      Per-airline network reach: route count, distinct destinations, distinct
+      destination countries, and distance stats. Grain: airline_id.
+    columns:
+      - name: airline_id
+        description: "Airline key. Primary key."
+        data_tests:
+          - not_null
+          - unique
+      - name: airline_name
+        description: "Airline name."
+      - name: airline_country
+        description: "Country of registration."
+      - name: is_active
+        description: "TRUE when the airline is active."
+      - name: total_routes
+        description: "Number of routes operated."
+        data_tests:
+          - not_null
+      - name: distinct_destinations
+        description: "Number of distinct destination airports served."
+        data_tests:
+          - not_null
+      - name: distinct_destination_countries
+        description: "Number of distinct destination countries served."
+      - name: avg_route_distance_km
+        description: "Average great-circle route distance, in kilometres."
+      - name: max_route_distance_km
+        description: "Longest single route distance, in kilometres."
+
+  - name: mart_country_connectivity
+    description: >
+      Directed country-to-country route connectivity. Grain:
+      (source_country, destination_country).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - source_country
+            - destination_country
+    columns:
+      - name: source_country
+        description: "Origin country."
+        data_tests:
+          - not_null
+      - name: destination_country
+        description: "Destination country."
+        data_tests:
+          - not_null
+      - name: is_domestic
+        description: "TRUE when origin and destination countries are the same."
+      - name: route_count
+        description: "Number of routes from source_country to destination_country."
+        data_tests:
+          - not_null
+      - name: airline_count
+        description: "Number of distinct airlines flying the country pair."
+      - name: avg_distance_km
+        description: "Average route distance for the pair, in kilometres."
+      - name: max_distance_km
+        description: "Longest route distance for the pair, in kilometres."
