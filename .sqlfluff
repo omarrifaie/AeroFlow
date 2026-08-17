@@ -1,0 +1,41 @@
+# sqlfluff configuration for the AeroFlow dbt models.
+# Linting uses the dbt templater so ref()/source()/macros are resolved exactly
+# as dbt compiles them. Dialect is duckdb (the default local target); the same
+# models are written to also compile on Snowflake.
+[sqlfluff]
+templater = dbt
+dialect = duckdb
+max_line_length = 100
+
+# Rules intentionally disabled:
+#   AM04 - "unknown column count" fires on the deliberate `select *` passthroughs
+#          in staging (1:1 cleaned views).
+#   ST06 - ordering of select targets is a stylistic preference we don't enforce.
+#   RF04 - allows conventional identifiers (e.g. "name", "type") mirrored from source.
+exclude_rules = AM04, ST06, RF04
+
+[sqlfluff:templater:dbt]
+project_dir = transform
+profiles_dir = transform
+target = duckdb
+
+[sqlfluff:indentation]
+indented_joins = false
+indented_using_on = true
+implicit_indents = allow
+
+# Keep SQL lowercase to match the project's house style.
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower

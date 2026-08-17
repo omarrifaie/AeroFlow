@@ -1,0 +1,48 @@
+name: CI
+
+# Run on every pull request and on pushes to any branch except main.
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  build:
+    name: lint • ingest • dbt build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff (lint)
+        run: ruff check .
+
+      - name: Ingest raw OpenFlights data
+        run: python -m pipeline.cli ingest
+
+      - name: Load into DuckDB
+        run: python -m pipeline.cli load
+
+      - name: dbt deps
+        working-directory: transform
+        run: dbt deps --profiles-dir .
+
+      - name: dbt build (models + tests)
+        working-directory: transform
+        run: dbt build --profiles-dir . --target duckdb
+
+      - name: SQL lint (sqlfluff)
+        run: sqlfluff lint transform/models
