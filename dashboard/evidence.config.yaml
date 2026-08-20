@@ -1,0 +1,94 @@
+# Evidence project configuration.
+# Docs: https://docs.evidence.dev/reference/config
+plugins:
+  components:
+    "@evidence-dev/core-components": {}
+  datasources:
+    "@evidence-dev/duckdb": {}
+
+# Dark is the default canvas so the techy near black look shows regardless of
+# the operating system preference. The toggle still lets users pick light.
+appearance:
+  default: dark
+  switcher: true
+
+# AeroFlow theme: warm orange primary, near black surfaces, blue as the
+# secondary accent. Dark mode is a near black canvas (#0a0a0a) with lifted
+# #141414 cards and orange plus blue accents.
+theme:
+  colors:
+    # Brand accent used for links, active nav and controls. Burnt orange keeps
+    # link text readable on white, while the dark tone stays vivid on black.
+    primary:
+      light: "#c2410c"
+      dark: "#fb923c"
+    # Secondary accent (blue), used for highlights and the second chart series.
+    accent:
+      light: "#2563eb"
+      dark: "#60a5fa"
+    info:
+      light: "#0284c7"
+      dark: "#38bdf8"
+    # Base surfaces. Light is clean white. Dark is a near black canvas at
+    # #0a0a0a (page, sidebar and top bar) with lifted #141414 cards and a
+    # thin subtle border for definition. Text stays high contrast light.
+    base-100:
+      light: "#ffffff"
+      dark: "#0a0a0a"
+    base-200:
+      light: "#f5f5f6"
+      dark: "#141414"
+    base-300:
+      light: "#e6e6e9"
+      dark: "#262626"
+    base-content:
+      light: "#26272b"
+      dark: "#ededf0"
+    base-heading:
+      light: "#0a0a0b"
+      dark: "#fafafa"
+    base-content-muted:
+      light: "#6b7280"
+      dark: "#a1a1aa"
+    positive:
+      light: "#16a34a"
+      dark: "#4ade80"
+    warning:
+      light: "#d97706"
+      dark: "#fbbf24"
+    negative:
+      light: "#dc2626"
+      dark: "#f87171"
+  # Chart series order: orange, then blue, then complementary hues. Tuned so
+  # every adjacent pair stays distinct for color vision deficiency and clears
+  # contrast against both the white and the true black chart surfaces.
+  colorPalettes:
+    default:
+      light:
+        - "#ea580c"
+        - "#2563eb"
+        - "#0d9488"
+        - "#d97706"
+        - "#7c3aed"
+        - "#0891b2"
+        - "#be123c"
+        - "#65a30d"
+      dark:
+        - "#ea580c"
+        - "#2563eb"
+        - "#0d9488"
+        - "#d97706"
+        - "#7c3aed"
+        - "#0891b2"
+        - "#e11d48"
+        - "#65a30d"
+  # Sequential ramp for colorscale table cells. A single orange hue, running
+  # pale to deep on white and deep to bright on black so high values pop.
+  colorScales:
+    default:
+      light:
+        - "#ffe8d6"
+        - "#c2410c"
+      dark:
+        - "#431407"
+        - "#fb923c"
