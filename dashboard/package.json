@@ -1,0 +1,38 @@
+{
+  "name": "aeroflow-dashboard",
+  "version": "1.0.0",
+  "description": "AeroFlow BI-as-code dashboard (Evidence.dev) over the DuckDB marts.",
+  "author": "Omar Rifaie",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "sources": "evidence sources",
+    "dev": "evidence dev",
+    "build": "evidence build",
+    "build:strict": "evidence build:strict",
+    "preview": "evidence preview"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@evidence-dev/core-components": "^5.4.2",
+    "@evidence-dev/duckdb": "^2.0.1",
+    "@evidence-dev/evidence": "^40.1.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "overrides": {
+    "@duckdb/node-api": "1.5.4-r.1",
+    "@duckdb/node-bindings": "1.5.4-r.1",
+    "typescript": "$typescript"
+  },
+  "allowScripts": {
+    "@sveltejs/kit@2.8.4": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.21.5": true,
+    "svelte-preprocess@5.1.3": true
+  }
+}
