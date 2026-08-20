@@ -19,6 +19,16 @@ single target - so this repo doubles as a portable ELT reference.
 
 ---
 
+## Screenshots
+
+![AeroFlow demo](docs/img/demo.gif)
+
+| Overview | Airports | Routes |
+| --- | --- | --- |
+| ![Overview KPIs](docs/img/dashboard-overview.png) | ![Busiest airports](docs/img/dashboard-airports.png) | ![Routes & connectivity](docs/img/dashboard-routes.png) |
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -168,16 +178,6 @@ Linting runs in CI and via `pre-commit`:
 make lint          # ruff (Python) + sqlfluff (SQL)
 pre-commit install # optional: run the gates on every commit
 ```
-
----
-
-## Screenshots
-
-> Generate these locally with `make dashboard` (they are git-ignored build output).
-
-| Overview | Airports | Routes |
-| --- | --- | --- |
-| ![Overview KPIs](docs/img/dashboard-overview.png) | ![Busiest airports](docs/img/dashboard-airports.png) | ![Routes & connectivity](docs/img/dashboard-routes.png) |
 
 ---
 
