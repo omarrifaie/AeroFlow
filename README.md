@@ -19,7 +19,7 @@ single target - so this repo doubles as a portable ELT reference.
 
 ---
 
-## Screenshots
+## Visuals
 
 ![AeroFlow demo](docs/img/demo.gif)
 
@@ -34,32 +34,32 @@ single target - so this repo doubles as a portable ELT reference.
 ```mermaid
 flowchart LR
     subgraph src["Source (free, no auth)"]
-        OF["OpenFlights .dat files<br/>airports · airlines · routes"]
+        OF["OpenFlights .dat files<br/>airports, airlines, routes"]
     end
 
-    subgraph py["Ingestion — Python"]
+    subgraph py["Ingestion (Python)"]
         DL["download.py<br/>data/raw/"]
-        LD["load.py<br/>\\N → NULL, all VARCHAR"]
+        LD["load.py<br/>nulls to NULL, cast to VARCHAR"]
     end
 
-    subgraph wh["Warehouse — DuckDB (aeroflow.duckdb)"]
-        RAW[("raw<br/>raw_airports<br/>raw_airlines<br/>raw_routes")]
+    subgraph wh["Warehouse (DuckDB)"]
+        RAW[("raw schema<br/>raw_airports<br/>raw_airlines<br/>raw_routes")]
     end
 
-    subgraph dbt["Transform — dbt"]
-        STG["staging<br/>views · typed · cleaned"]
-        INT["intermediate<br/>int_routes_enriched<br/>+ haversine_km"]
-        MRT["marts<br/>dim_airport · dim_airline · fct_route<br/>mart_busiest_airports<br/>mart_airline_reach<br/>mart_country_connectivity"]
+    subgraph dbtproj["Transform (dbt)"]
+        STG["staging<br/>views, typed, cleaned"]
+        INT["intermediate<br/>int_routes_enriched, haversine_km"]
+        MRT["marts<br/>dim_airport, dim_airline, fct_route<br/>mart_busiest_airports<br/>mart_airline_reach<br/>mart_country_connectivity"]
     end
 
-    subgraph bi["Visualise — Evidence.dev"]
-        DASH["index · airports · routes<br/>KPIs · charts · maps"]
+    subgraph bi["Visualise (Evidence.dev)"]
+        DASH["index, airports, routes<br/>KPIs, charts, maps"]
     end
 
     OF --> DL --> LD --> RAW --> STG --> INT --> MRT --> DASH
 
-    CLI["pipeline.cli<br/>ingest · load · transform · all"] -.orchestrates.-> DL
-    CI["GitHub Actions CI<br/>ruff · dbt build · sqlfluff"] -.validates.-> dbt
+    CLI["pipeline.cli<br/>ingest, load, transform, all"] -. orchestrates .-> DL
+    CI["GitHub Actions CI<br/>ruff, dbt build, sqlfluff"] -. validates .-> dbtproj
 ```
 
 Data flows one way - **ingest → load → transform → visualise** — with tests and
