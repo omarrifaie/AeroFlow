@@ -1,0 +1,7 @@
+name: aeroflow
+type: duckdb
+options:
+  # Path to the DuckDB warehouse built by `dbt build`, resolved relative to this
+  # source directory (dashboard/sources/aeroflow/) -> repo-root/transform/.
+  # Build it first with `make all` from the repo root.
+  filename: ../../../transform/aeroflow.duckdb

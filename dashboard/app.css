@@ -1,0 +1,548 @@
+/* Write your global styles here, in PostCSS syntax */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	html {
+		@apply scroll-smooth;
+	}
+
+	body {
+		@apply select-none;
+	}
+
+	/* Default border color */
+	* {
+		@apply border-base-300;
+	}
+
+	/* osx style scrollbars */
+	.pretty-scrollbar {
+		scrollbar-width: thin;
+		scrollbar-color: theme('colors.base-300') transparent;
+	}
+
+	.pretty-scrollbar::-webkit-scrollbar {
+		height: 6px;
+		width: 6px;
+	}
+
+	.pretty-scrollbar::-webkit-scrollbar-track {
+		background-color: transparent;
+	}
+
+	.pretty-scrollbar::-webkit-scrollbar-thumb {
+		background-color: transparent;
+		border-radius: 7px;
+	}
+
+	.pretty-scrollbar:hover::-webkit-scrollbar-thumb {
+		background-color: theme('colors.base-200');
+	}
+
+	/* hidden scrollbar */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	/* remove user agent styles for select */
+	select {
+		appearance: none;
+		-moz-appearance: none;
+		-webkit-appearance: none;
+	}
+}
+
+@layer components {
+	.markdown {
+		@apply leading-normal font-sans text-base antialiased;
+	}
+
+	img.markdown {
+		@apply mx-auto h-auto max-w-full rounded-lg;
+	}
+
+	article.markdown a.markdown {
+		@apply text-primary underline decoration-transparent hover:decoration-primary  transition-all duration-200 !important;
+	}
+
+	p.markdown,
+	ul.markdown,
+	ol.markdown {
+		margin-block-end: 1.2em;
+		margin-block-start: 0em;
+	}
+
+	/* lists */
+
+	ol.markdown {
+		@apply list-decimal ps-6;
+	}
+	ul.markdown {
+		@apply list-disc ps-6;
+	}
+
+	/* 1st level list */
+	ul.markdown,
+	ol.markdown {
+		/* 2nd level unordered list */
+		& ul.markdown {
+			@apply list-circle;
+		}
+		/* 2nd level ordered list */
+		& ol.markdown {
+			@apply list-lower-alpha;
+		}
+
+		/* any 2nd level list */
+		& ul.markdown,
+		& ol.markdown {
+			@apply mt-1;
+			margin-block-end: 0em;
+
+			/* 3rd level unordered list */
+			& ul.markdown {
+				@apply list-square;
+			}
+			/* 3rd level ordered list */
+			& ol.markdown {
+				@apply list-lower-roman;
+			}
+		}
+
+		li.markdown {
+			@apply list-item;
+			text-align: -webkit-match-parent;
+
+			& + li.markdown {
+				@apply mt-1;
+			}
+		}
+	}
+
+	h1.markdown,
+	h2.markdown,
+	h3.markdown,
+	h4.markdown,
+	h5.markdown,
+	h6.markdown {
+		@apply scroll-mt-14 break-inside-avoid font-sans text-base-heading;
+		/* ensure that table of contents links scroll with room for the header */
+	}
+
+	h1.title:first-of-type,
+	h1.markdown:first-of-type {
+		@apply mt-1 mb-2;
+	}
+
+	h1.title {
+		@apply mt-5 mb-1 text-2xl tracking-wide font-bold break-inside-avoid;
+	}
+
+	h1.markdown {
+		@apply mt-5 mb-1 text-2xl tracking-wide font-bold break-inside-avoid;
+	}
+
+	h2.markdown {
+		@apply mt-3 mb-1 text-xl font-semibold;
+	}
+
+	h3.markdown {
+		@apply mt-2 mb-1 font-semibold text-base;
+	}
+
+	h4.markdown {
+		@apply mt-1 text-sm  font-semibold;
+	}
+
+	h5.markdown {
+		@apply mt-1 text-xs font-semibold;
+	}
+
+	h6.markdown {
+		@apply mt-1 text-xs;
+	}
+
+	hr.markdown {
+		@apply h-px my-8 max-w-xl mx-auto bg-base-300 border-0;
+	}
+
+	code.markdown {
+		@apply font-mono text-[0.875em] bg-base-200 border border-base-300 rounded px-1 select-all py-0.5;
+	}
+
+	form code {
+		font-size: unset;
+	}
+
+	blockquote.markdown {
+		@apply bg-base-200 border-l-4 border-base-content-muted pl-3 my-8 py-2;
+	}
+
+	blockquote.markdown > blockquote.markdown {
+		@apply m-0;
+	}
+
+	blockquote.markdown > :first-child {
+		@apply mt-0;
+	}
+
+	blockquote.markdown > :last-child {
+		@apply mb-0;
+	}
+
+	blockquote.markdown * {
+		@apply text-base-content-muted;
+	}
+	/* Ensure size and color are maintained for bold, italic, strikethrough */
+	strong.markdown {
+		@apply text-[1em] text-inherit;
+	}
+
+	em.markdown {
+		@apply text-[1em] text-inherit;
+	}
+
+	del.markdown {
+		@apply text-[1em] text-inherit;
+	}
+
+	a.markdown {
+		@apply text-[1em] text-inherit;
+	}
+
+	table.markdown {
+		@apply min-w-full  border-collapse text-center mx-auto my-5;
+	}
+
+	th.markdown {
+		@apply text-sm font-medium border-b border-gray-800 py-0 px-2 text-ellipsis overflow-hidden;
+	}
+
+	td.markdown {
+		@apply text-sm py-1 px-2 overflow-hidden text-ellipsis;
+	}
+}
+
+:root {
+	/* Layout header height */
+	--header-height: 3.5rem;
+	/* Font stacks */
+	--monospace-font-family: theme(fontFamily.mono);
+	--ui-font-family: theme(fontFamily.sans);
+	--ui-font-family-compact: theme(fontFamily.sans);
+
+	/*
+		!! DEPRECATED !!
+		Kept for backwards compatibility with users projects
+	*/
+	--blue-50: #eff6ff;
+	--blue-100: #dbeafe;
+	--blue-200: #bfdbfe;
+	--blue-300: #93c5fd;
+	--blue-400: #60a5fa;
+	--blue-500: #3b82f6;
+	--blue-600: #2563eb;
+	--blue-700: #1d4ed8;
+	--blue-800: #1e40af;
+	--blue-900: #1e3a8a;
+	--blue-999: #172554;
+	--blue-link: var(--blue-700);
+
+	--green-50: #f0fdf4;
+	--green-100: #dcfce7;
+	--green-200: #bbf7d0;
+	--green-300: #86efac;
+	--green-400: #4ade80;
+	--green-500: #22c55e;
+	--green-600: #16a34a;
+	--green-700: #15803d;
+	--green-800: #166534;
+	--green-900: #14532d;
+	--green-999: #052e16;
+
+	--grey-50: #f9fafb;
+	--grey-100: #f3f4f6;
+	--grey-200: #e5e7eb;
+	--grey-300: #d1d5db;
+	--grey-400: #9ca3af;
+	--grey-500: #6b7280;
+	--grey-600: #4b5563;
+	--grey-700: #374151;
+	--grey-800: #1f2937;
+	--grey-900: #111827;
+	--grey-999: #030712;
+
+	--red-50: #fef2f2;
+	--red-100: #fee2e2;
+	--red-200: #fecaca;
+	--red-300: #fca5a5;
+	--red-400: #f87171;
+	--red-500: #ef4444;
+	--red-600: #dc2626;
+	--red-700: #b91c1c;
+	--red-800: #991b1b;
+	--red-900: #7f1d1d;
+	--red-999: #450a0a;
+
+	--yellow-50: #fefce8;
+	--yellow-100: #fef9c3;
+	--yellow-200: #fef08a;
+	--yellow-300: #fde047;
+	--yellow-400: #facc15;
+	--yellow-500: #eab308;
+	--yellow-600: #ca8a04;
+	--yellow-700: #a16207;
+	--yellow-800: #854d0e;
+	--yellow-900: #713f12;
+	--yellow-999: #422006;
+}
+
+[data-theme='dark'] .__evidence-leaflet-tile-layer__ {
+	filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+@media print {
+	html {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4 {
+		break-after: avoid-page;
+	}
+
+	article {
+		orphans: 2;
+		widows: 2;
+	}
+}
+
+/* ============================================================
+   AeroFlow presentation layer
+   Theme colours resolve through the --twc-* variables that the
+   theme system publishes per mode, so everything below tracks
+   light and dark automatically. Rules live outside @layer so they
+   reliably sit above the generated utility classes.
+   ============================================================ */
+
+:root {
+	--aeroflow-radius: 14px;
+	--aeroflow-ring: hsl(var(--twc-base-content) / 0.06);
+}
+
+html {
+	font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+/* ---- Page title, styled as a compact hero ---- */
+article h1.title,
+article h1.title:first-of-type {
+	color: hsl(var(--twc-base-heading));
+	font-size: clamp(1.95rem, 1.2rem + 2.4vw, 2.9rem);
+	line-height: 1.08;
+	letter-spacing: -0.03em;
+	font-weight: 800;
+	margin-top: 1.4rem;
+	margin-bottom: 0.4rem;
+}
+
+article h1.title::after {
+	content: '';
+	display: block;
+	width: 3.5rem;
+	height: 3px;
+	margin-top: 0.85rem;
+	border-radius: 999px;
+	background: linear-gradient(90deg, hsl(var(--twc-primary)), hsl(var(--twc-accent)));
+}
+
+/* Lead paragraph that introduces each page */
+article .hero-lead {
+	color: hsl(var(--twc-base-content-muted));
+	font-size: 1.075rem;
+	line-height: 1.6;
+	max-width: 46rem;
+	margin-top: 0.4rem;
+	margin-bottom: 0.75rem;
+}
+
+/* Short caption under a section header */
+article .caption {
+	color: hsl(var(--twc-base-content-muted));
+	font-size: 0.95rem;
+	line-height: 1.55;
+	max-width: 46rem;
+	margin-top: 0;
+	margin-bottom: 1.15rem;
+}
+
+/* ---- Section headers with an orange accent rule ---- */
+article h2.markdown {
+	color: hsl(var(--twc-base-heading));
+	font-size: 1.35rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	margin-top: 2.75rem;
+	margin-bottom: 0.5rem;
+	padding-left: 0.8rem;
+	border-left: 3px solid hsl(var(--twc-primary));
+}
+
+/* ---- KPI value cards ----
+   Wrap an Evidence <Grid> of <BigValue> blocks in .kpi-cards to turn
+   each value into a lifted, bordered card with an accent spine. */
+.kpi-cards {
+	margin: 1.35rem 0 0.5rem;
+}
+
+.kpi-cards .grid > * {
+	position: relative;
+	background: hsl(var(--twc-base-200));
+	border: 1px solid hsl(var(--twc-base-300));
+	border-radius: var(--aeroflow-radius);
+	padding: 1rem 1.15rem 1.1rem;
+	margin: 0;
+	overflow: hidden;
+	box-shadow: 0 1px 2px var(--aeroflow-ring);
+	transition:
+		transform 0.18s ease,
+		border-color 0.18s ease,
+		box-shadow 0.18s ease;
+}
+
+.kpi-cards .grid > *::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 3px;
+	background: linear-gradient(180deg, hsl(var(--twc-primary)), hsl(var(--twc-accent)));
+	box-shadow:
+		0 0 10px hsl(var(--twc-primary) / 0.55),
+		0 0 22px hsl(var(--twc-accent) / 0.22);
+	transition:
+		box-shadow 0.18s ease,
+		width 0.18s ease;
+}
+
+.kpi-cards .grid > *:hover {
+	transform: translateY(-2px);
+	border-color: hsl(var(--twc-primary) / 0.55);
+	box-shadow:
+		0 14px 30px hsl(0 0% 0% / 0.55),
+		0 0 0 1px hsl(var(--twc-primary) / 0.22),
+		0 6px 32px hsl(var(--twc-primary) / 0.18);
+}
+
+.kpi-cards .grid > *:hover::before {
+	width: 4px;
+	box-shadow:
+		0 0 16px hsl(var(--twc-primary) / 0.85),
+		0 0 30px hsl(var(--twc-accent) / 0.4);
+}
+
+/* KPI label. Monospace geometric accent, reserving two lines so numbers
+   line up across the row. */
+.kpi-cards .grid > * p.text-sm {
+	color: hsl(var(--twc-base-content-muted));
+	font-family: var(--monospace-font-family, ui-monospace, monospace);
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	line-height: 1.25;
+	min-height: 2.5em;
+}
+
+/* KPI number */
+.kpi-cards .grid > * .text-xl {
+	color: hsl(var(--twc-base-heading));
+	font-size: 1.85rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	margin-top: 0.4rem;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- Bordered panel, usable around a chart or table ---- */
+.panel {
+	background: hsl(var(--twc-base-200));
+	border: 1px solid hsl(var(--twc-base-300));
+	border-radius: var(--aeroflow-radius);
+	padding: 1rem 1.15rem 1.1rem;
+	margin: 0.75rem 0 1.6rem;
+	box-shadow: 0 1px 2px var(--aeroflow-ring);
+}
+
+/* ---- Muted footer / data credit ---- */
+article .footer-note {
+	color: hsl(var(--twc-base-content-muted));
+	font-size: 0.8rem;
+	line-height: 1.5;
+	margin-top: 0.5rem;
+}
+
+article hr.markdown {
+	margin-top: 2.5rem;
+	margin-bottom: 1.25rem;
+}
+
+/* ---- Content links: smooth hover with a subtle techy glow ---- */
+article.markdown a.markdown {
+	transition:
+		color 0.18s ease,
+		text-shadow 0.18s ease,
+		text-decoration-color 0.2s ease;
+}
+
+article.markdown a.markdown:hover {
+	color: hsl(var(--twc-primary));
+	text-shadow: 0 0 10px hsl(var(--twc-primary) / 0.35);
+}
+
+/* ============================================================
+   Dark surface safety net
+   Tokens already drive the page, sidebar and top bar from
+   base-100 (#0a0a0a) and cards from base-200 (#141414). These
+   rules pin the core surfaces explicitly so nothing renders light
+   in dark mode even if a component reaches for a raw utility.
+   ============================================================ */
+[data-theme='dark'] body,
+[data-theme='dark'] #evidence-main-article {
+	background-color: hsl(var(--twc-base-100));
+	color: hsl(var(--twc-base-content));
+}
+
+[data-theme='dark'] .bg-white {
+	background-color: hsl(var(--twc-base-200)) !important;
+}
+
+/* ---- Respect prefers-reduced-motion for cards and links ---- */
+@media (prefers-reduced-motion: reduce) {
+	.kpi-cards .grid > *,
+	.kpi-cards .grid > *::before,
+	article.markdown a.markdown {
+		transition: none !important;
+	}
+
+	.kpi-cards .grid > *:hover {
+		transform: none;
+	}
+}
