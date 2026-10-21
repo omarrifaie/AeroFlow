@@ -14,11 +14,11 @@ transform/aeroflow.duckdb
 .env.*
 !.env.example
 
-# dbt build artifacts
+# dbt build artifacts (transform/package-lock.yml is tracked on purpose: it pins
+# the exact dbt package versions that `dbt deps` installs)
 transform/target/
 transform/dbt_packages/
 transform/logs/
-transform/package-lock.yml
 transform/.user.yml
 
 # Python

@@ -3,8 +3,8 @@
 
     Uses the haversine formula with a mean Earth radius of 6371 km. Every
     function used here -- radians, sin, cos, asin, sqrt, power, least -- exists
-    with identical semantics on both DuckDB and Snowflake, so the calling models
-    are portable across targets with no changes.
+    with identical semantics on DuckDB, Snowflake and Databricks, so the calling
+    models are portable across targets with no changes.
 
     The inner sqrt result is clamped to 1.0 with least() to keep asin() inside
     its valid [-1, 1] domain in the (rare) event of floating-point overshoot for

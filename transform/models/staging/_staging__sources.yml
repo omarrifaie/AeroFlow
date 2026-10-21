@@ -3,17 +3,19 @@ version: 2
 sources:
   - name: openflights
     description: >
-      Raw OpenFlights static data loaded verbatim (all VARCHAR) into the DuckDB
-      `raw` schema by the Python ingestion step. Distributed under the Open
-      Database License (ODbL). See the project README for attribution.
-    database: aeroflow
+      Raw OpenFlights static data loaded verbatim (all VARCHAR) into the `raw`
+      schema by the Python ingestion step. Distributed under the Open Database
+      License (ODbL). See the project README for attribution.
+    # No `database:` here on purpose: the source resolves to the active target's
+    # database (DuckDB `aeroflow`, SNOWFLAKE_DATABASE, or DATABRICKS_CATALOG).
     schema: raw
     # Every raw table carries a _loaded_at timestamp set at load time; freshness
     # watches it so a stale/failed ingest surfaces as a warning or error.
-    loaded_at_field: _loaded_at
-    freshness:
-      warn_after: { count: 24, period: hour }
-      error_after: { count: 72, period: hour }
+    config:
+      loaded_at_field: _loaded_at
+      freshness:
+        warn_after: { count: 24, period: hour }
+        error_after: { count: 72, period: hour }
     tables:
       - name: raw_airports
         description: "Raw airports feed (airports.dat), one row per airport."

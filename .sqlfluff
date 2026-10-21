@@ -1,7 +1,7 @@
 # sqlfluff configuration for the AeroFlow dbt models.
 # Linting uses the dbt templater so ref()/source()/macros are resolved exactly
 # as dbt compiles them. Dialect is duckdb (the default local target); the same
-# models are written to also compile on Snowflake.
+# models are written to also compile on Snowflake and Databricks.
 [sqlfluff]
 templater = dbt
 dialect = duckdb

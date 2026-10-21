@@ -10,6 +10,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from ingestion.sources import DATASETS, Dataset
 
@@ -19,6 +21,15 @@ RAW_DIR = PROJECT_ROOT / "data" / "raw"
 
 # Generous but bounded timeout so a hung connection fails fast in CI.
 _REQUEST_TIMEOUT_SECONDS = 60
+
+# Retry transient failures (dropped connections, 429 and 5xx) with exponential
+# backoff so a brief upstream hiccup does not fail the whole pipeline.
+_RETRY_POLICY = Retry(
+    total=3,
+    backoff_factor=1.0,
+    status_forcelist=(429, 500, 502, 503, 504),
+    allowed_methods=("GET",),
+)
 
 
 def download_dataset(dataset: Dataset, raw_dir: Path = RAW_DIR, force: bool = False) -> Path:
@@ -40,12 +51,17 @@ def download_dataset(dataset: Dataset, raw_dir: Path = RAW_DIR, force: bool = Fa
         return destination
 
     print(f"[download] {dataset.name}: fetching {dataset.url}")
-    response = requests.get(dataset.url, timeout=_REQUEST_TIMEOUT_SECONDS)
+    with requests.Session() as session:
+        session.mount("https://", HTTPAdapter(max_retries=_RETRY_POLICY))
+        response = session.get(dataset.url, timeout=_REQUEST_TIMEOUT_SECONDS)
     response.raise_for_status()
 
-    # Write bytes to preserve the file exactly as served; encoding is handled at
-    # load time. Latin-1/UTF-8 mix in OpenFlights is dealt with in load.py.
-    destination.write_bytes(response.content)
+    # Write bytes to preserve the file exactly as served; load.py decodes them as
+    # UTF-8. Writing to a sibling file and renaming means an interrupted download
+    # never leaves a truncated file behind that later runs would treat as cached.
+    partial = destination.with_name(f"{destination.name}.part")
+    partial.write_bytes(response.content)
+    partial.replace(destination)
     kib = len(response.content) / 1024
     print(
         f"[download] {dataset.name}: wrote {kib:,.1f} KiB -> {destination.relative_to(PROJECT_ROOT)}"

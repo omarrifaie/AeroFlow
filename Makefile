@@ -5,12 +5,20 @@
 #     make all        # ingest -> load -> dbt build (models + tests)
 #     make dashboard  # run the Evidence dashboard (needs Node 18+)
 #
+# Other warehouses use the same targets with TARGET (and EXTRAS for setup):
+#     make setup EXTRAS=dev,snowflake
+#     make all TARGET=snowflake
+#
 # The pipeline steps are driven through the Python CLI so the working directory
 # is handled consistently on every platform.
 
 PYTHON ?= python
 VENV := .venv
 ROOT := $(CURDIR)
+# Warehouse to load and build: duckdb (default), snowflake or databricks.
+TARGET ?= duckdb
+# pip extras for `make setup`; add snowflake or databricks for those targets.
+EXTRAS ?= dev
 
 # venv interpreter differs between Windows and POSIX.
 ifeq ($(OS),Windows_NT)
@@ -25,14 +33,14 @@ DBT := "$(ROOT)/$(VENV_PY)" -m dbt.cli.main
 .PHONY: help setup ingest load build test docs dashboard all lint clean
 
 help: ## Show this help
-	@echo "AeroFlow targets:"
-	@echo "  setup      Create .venv and install Python deps (editable + dev extras)"
+	@echo "AeroFlow targets (warehouse: TARGET=duckdb|snowflake|databricks, default duckdb):"
+	@echo "  setup      Create .venv and install Python deps (extras: EXTRAS=$(EXTRAS))"
 	@echo "  ingest     Download raw OpenFlights files into data/raw/"
-	@echo "  load       Load raw files into DuckDB (schema raw)"
-	@echo "  build      dbt deps + dbt build (models and tests)"
-	@echo "  test       dbt test (data tests only)"
-	@echo "  docs       Generate dbt docs (transform/target/)"
-	@echo "  all        ingest -> load -> build"
+	@echo "  load       Load raw files into the TARGET warehouse (schema raw)"
+	@echo "  build      dbt deps + dbt build on TARGET (models and tests)"
+	@echo "  test       dbt test on TARGET (data tests only)"
+	@echo "  docs       Generate dbt docs for TARGET (transform/target/)"
+	@echo "  all        ingest -> load -> build on TARGET"
 	@echo "  lint       Run ruff + sqlfluff"
 	@echo "  dashboard  Install + run the Evidence dashboard (Node 18+)"
 	@echo "  clean      Remove build artifacts, data and the warehouse"
@@ -40,25 +48,25 @@ help: ## Show this help
 setup: ## Create venv and install dependencies
 	$(PYTHON) -m venv $(VENV)
 	$(VENV_PY) -m pip install --upgrade pip
-	$(VENV_PY) -m pip install -e ".[dev]"
+	$(VENV_PY) -m pip install -e ".[$(EXTRAS)]"
 
 ingest: ## Download raw data
 	$(VENV_PY) -m pipeline.cli ingest
 
-load: ## Load raw data into DuckDB
-	$(VENV_PY) -m pipeline.cli load
+load: ## Load raw data into the TARGET warehouse
+	$(VENV_PY) -m pipeline.cli load --target $(TARGET)
 
 build: ## dbt deps + dbt build (models + tests)
-	$(VENV_PY) -m pipeline.cli transform
+	$(VENV_PY) -m pipeline.cli transform --target $(TARGET)
 
 all: ## Full pipeline: ingest -> load -> transform
-	$(VENV_PY) -m pipeline.cli all
+	$(VENV_PY) -m pipeline.cli all --target $(TARGET)
 
 test: ## Run dbt data tests
-	cd transform && $(DBT) test --profiles-dir .
+	cd transform && $(DBT) test --profiles-dir . --target $(TARGET)
 
 docs: ## Generate dbt documentation
-	cd transform && $(DBT) docs generate --profiles-dir .
+	cd transform && $(DBT) docs generate --profiles-dir . --target $(TARGET)
 
 lint: ## Lint Python (ruff) and SQL (sqlfluff)
 	$(VENV_PY) -m ruff check .

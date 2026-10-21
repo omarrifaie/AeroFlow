@@ -21,12 +21,20 @@ DUCKDB_PATH = PROJECT_ROOT / "transform" / "aeroflow.duckdb"
 RAW_SCHEMA = "raw"
 
 
-def _read_csv_expression(dataset: Dataset, file_path: Path) -> str:
+def read_csv_expression(dataset: Dataset, file_path: Path) -> str:
     """Build a DuckDB ``read_csv`` SELECT that yields all-VARCHAR raw columns.
 
     All columns are read as ``VARCHAR`` so ingestion never fails on a stray value;
-    casting and validation happen in the dbt staging models instead.
+    casting and validation happen in the dbt staging models instead. Shared with
+    the cloud loaders (via :func:`export_parquet`) so every warehouse parses the
+    files identically.
     """
+    if not file_path.exists():
+        raise FileNotFoundError(
+            f"Raw file for '{dataset.name}' not found at {file_path}. "
+            "Run the ingest step first (e.g. `python -m pipeline.cli ingest`)."
+        )
+
     columns_struct = ", ".join(f"'{name}': 'VARCHAR'" for name in dataset.columns)
     # ``nullstr`` matches the whole (unquoted) field value; ``\N`` -> NULL.
     # Forward slashes work on every platform, including Windows.
@@ -47,16 +55,27 @@ def _read_csv_expression(dataset: Dataset, file_path: Path) -> str:
     """
 
 
+def export_parquet(
+    con: duckdb.DuckDBPyConnection, dataset: Dataset, out_dir: Path, raw_dir: Path = RAW_DIR
+) -> Path:
+    """Write ``dataset`` to ``<out_dir>/<name>.parquet`` and return the file path.
+
+    Uses the exact parse of the DuckDB load, so the Databricks and Snowflake loaders
+    upload the same raw values (empty strings stay empty, ``\\N`` becomes ``NULL``).
+    ``_loaded_at`` is left out; each warehouse stamps its own load time.
+    """
+    parquet_path = out_dir / f"{dataset.name}.parquet"
+    select_sql = read_csv_expression(dataset, raw_dir / dataset.filename)
+    con.execute(
+        f"COPY (SELECT * EXCLUDE (_loaded_at) FROM ({select_sql})) "
+        f"TO '{parquet_path.as_posix()}' (FORMAT parquet)"
+    )
+    return parquet_path
+
+
 def load_dataset(con: duckdb.DuckDBPyConnection, dataset: Dataset, raw_dir: Path = RAW_DIR) -> int:
     """Load one dataset into ``raw.<raw_table>`` and return the row count."""
-    file_path = raw_dir / dataset.filename
-    if not file_path.exists():
-        raise FileNotFoundError(
-            f"Raw file for '{dataset.name}' not found at {file_path}. "
-            "Run the ingest step first (e.g. `python -m pipeline.cli ingest`)."
-        )
-
-    select_sql = _read_csv_expression(dataset, file_path)
+    select_sql = read_csv_expression(dataset, raw_dir / dataset.filename)
     con.execute(f"CREATE OR REPLACE TABLE {RAW_SCHEMA}.{dataset.raw_table} AS {select_sql}")
     (row_count,) = con.execute(f"SELECT count(*) FROM {RAW_SCHEMA}.{dataset.raw_table}").fetchone()
     print(f"[load] {dataset.raw_table}: {row_count:,} rows")

@@ -8,11 +8,19 @@ requests>=2.31,<3.0
 typer>=0.12,<1.0
 
 # --- Transformations (dbt) ---
-dbt-core>=1.8,<2.0
+dbt-core>=1.11,<2.0
 dbt-duckdb>=1.8,<2.0
 
+# --- Databricks target + raw loader (pyproject extra: .[databricks]) ---
+dbt-databricks>=1.12,<1.13
+databricks-sql-connector>=4.1.2,<5.0
+
+# --- Snowflake target + raw loader (pyproject extra: .[snowflake]) ---
+dbt-snowflake>=1.12,<1.13
+snowflake-connector-python>=4.2,<5.0
+
 # --- Quality gates / tooling ---
-ruff>=0.6
-sqlfluff>=3.0
-sqlfluff-templater-dbt>=3.0
-pre-commit>=3.7
+ruff>=0.17,<0.18
+sqlfluff>=4.0,<5.0
+sqlfluff-templater-dbt>=4.0,<5.0
+pre-commit>=3.7,<5.0

@@ -26,9 +26,10 @@ models:
         data_tests:
           - not_null
           - accepted_values:
-              values:
-                ["North America", "South America", "Europe", "Africa", "Asia",
-                 "Oceania", "Antarctica", "Other"]
+              arguments:
+                values:
+                  ["North America", "South America", "Europe", "Africa", "Asia",
+                   "Oceania", "Antarctica", "Other"]
       - name: latitude
         description: "Decimal latitude in degrees."
       - name: longitude
@@ -66,7 +67,8 @@ models:
         description: "Normalised active flag: 'Y' or 'N'."
         data_tests:
           - accepted_values:
-              values: ["Y", "N"]
+              arguments:
+                values: ["Y", "N"]
       - name: is_active
         description: "TRUE when the airline is currently active."
         data_tests:
@@ -80,7 +82,8 @@ models:
     data_tests:
       # dbt_expectations #1: the fact table must never be empty.
       - dbt_expectations.expect_table_row_count_to_be_between:
-          min_value: 1
+          arguments:
+            min_value: 1
     columns:
       - name: route_id
         description: "Surrogate key over (airline_code, source_airport_id, destination_airport_id)."
@@ -91,22 +94,25 @@ models:
         description: "FK to dim_airline (nullable when the airline is unknown)."
         data_tests:
           - relationships:
-              to: ref('dim_airline')
-              field: airline_id
+              arguments:
+                to: ref('dim_airline')
+                field: airline_id
       - name: source_airport_id
         description: "FK to dim_airport (origin)."
         data_tests:
           - not_null
           - relationships:
-              to: ref('dim_airport')
-              field: airport_id
+              arguments:
+                to: ref('dim_airport')
+                field: airport_id
       - name: destination_airport_id
         description: "FK to dim_airport (destination)."
         data_tests:
           - not_null
           - relationships:
-              to: ref('dim_airport')
-              field: airport_id
+              arguments:
+                to: ref('dim_airport')
+                field: airport_id
       - name: airline_code
         description: "IATA/ICAO code of the operating airline."
       - name: source_airport_code
@@ -127,9 +133,10 @@ models:
           - not_null
           # dbt_expectations #2: distances sit within physically plausible bounds.
           - dbt_expectations.expect_column_values_to_be_between:
-              min_value: 0
-              max_value: 20100
-              strictly: false
+              arguments:
+                min_value: 0
+                max_value: 20100
+                strictly: false
 
   - name: mart_busiest_airports
     description: >
@@ -168,7 +175,7 @@ models:
         data_tests:
           - not_null
       - name: airport_rank
-        description: "Dense ordering by total_routes (1 = busiest)."
+        description: "Position by total_routes (1 = busiest); ties are broken by airport_id."
         data_tests:
           - not_null
           - unique
@@ -210,9 +217,10 @@ models:
       (source_country, destination_country).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - source_country
-            - destination_country
+          arguments:
+            combination_of_columns:
+              - source_country
+              - destination_country
     columns:
       - name: source_country
         description: "Origin country."
