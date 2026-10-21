@@ -1,8 +1,9 @@
 # dbt connection profiles for AeroFlow.
 #
-# The SAME models run on either target: DuckDB locally (default) or Snowflake in
-# the cloud. Switch with `dbt build --target snowflake` once the SNOWFLAKE_* env
-# vars are set (see .env.example). No model SQL changes are required.
+# The SAME models run on any target: DuckDB locally (default), Snowflake, or
+# Databricks. Switch with `dbt build --target snowflake` (or `--target databricks`)
+# once that target's env vars are set (see .env.example). No model SQL changes
+# are required.
 aeroflow:
   target: duckdb
   outputs:
@@ -29,3 +30,16 @@ aeroflow:
       schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'MAIN') }}"
       threads: 4
       client_session_keep_alive: false
+
+    # --- Databricks (portability proof) ------------------------------------
+    # Unity Catalog on a SQL warehouse (the serverless one in Free Edition works).
+    # Like Snowflake, every value comes from the environment. DATABRICKS_HOST is
+    # the bare workspace hostname, without https://.
+    databricks:
+      type: databricks
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      token: "{{ env_var('DATABRICKS_TOKEN') }}"
+      catalog: "{{ env_var('DATABRICKS_CATALOG', 'workspace') }}"
+      schema: "{{ env_var('DATABRICKS_SCHEMA', 'aeroflow') }}"
+      threads: 4

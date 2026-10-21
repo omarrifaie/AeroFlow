@@ -2,13 +2,15 @@
 
 Column-level reference for the mart layer (schema `marts`). Types shown are the
 DuckDB types produced by the default build; the equivalent Snowflake types
-(`NUMBER`, `FLOAT`, `VARCHAR`, `BOOLEAN`) apply on the `snowflake` target.
+(`NUMBER`, `FLOAT`, `VARCHAR`, `BOOLEAN`) apply on the `snowflake` target, and the
+equivalent Databricks types (`INT`, `BIGINT`, `DOUBLE`, `STRING`, `BOOLEAN`) on
+the `databricks` target.
 
 Descriptions here mirror the dbt `.yml` documentation, which powers `dbt docs`.
 
 ---
 
-## `dim_airport` — airport dimension
+## `dim_airport`: airport dimension
 
 **Grain:** one row per airport (`airport_id`).
 
@@ -30,7 +32,7 @@ Descriptions here mirror the dbt `.yml` documentation, which powers `dbt docs`.
 
 ---
 
-## `dim_airline` — airline dimension
+## `dim_airline`: airline dimension
 
 **Grain:** one row per airline (`airline_id`).
 
@@ -48,7 +50,7 @@ Descriptions here mirror the dbt `.yml` documentation, which powers `dbt docs`.
 
 ---
 
-## `fct_route` — route fact table
+## `fct_route`: route fact table
 
 **Grain:** one row per airline / source-airport / destination-airport.
 Star-schema centre; foreign keys reference `dim_airline` and `dim_airport`.
@@ -69,7 +71,7 @@ Star-schema centre; foreign keys reference `dim_airline` and `dim_airport`.
 
 ---
 
-## `mart_busiest_airports` — airport connectivity leaderboard
+## `mart_busiest_airports`: airport connectivity leaderboard
 
 **Grain:** one row per airport that appears on at least one route (`airport_id`).
 
@@ -90,7 +92,7 @@ Star-schema centre; foreign keys reference `dim_airline` and `dim_airport`.
 
 ---
 
-## `mart_airline_reach` — per-airline network reach
+## `mart_airline_reach`: per-airline network reach
 
 **Grain:** one row per airline (`airline_id`).
 
@@ -108,7 +110,7 @@ Star-schema centre; foreign keys reference `dim_airline` and `dim_airport`.
 
 ---
 
-## `mart_country_connectivity` — directed country-to-country connectivity
+## `mart_country_connectivity`: directed country-to-country connectivity
 
 **Grain:** one row per `(source_country, destination_country)` pair.
 

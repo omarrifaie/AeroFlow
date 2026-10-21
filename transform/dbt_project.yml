@@ -1,6 +1,8 @@
 name: "aeroflow"
 version: "1.0.0"
 config-version: 2
+# Generic-test `arguments:` blocks and source `config:` freshness need dbt 1.11+.
+require-dbt-version: [">=1.11.0", "<2.0.0"]
 
 # This profile is resolved from the profiles.yml that ships in this same
 # directory (the pipeline CLI passes --profiles-dir transform).
@@ -38,6 +40,8 @@ seeds:
   aeroflow:
     +schema: marts
     seed_region_lookup:
+      # `string` is a text type on DuckDB, Snowflake and Databricks alike
+      # (Databricks rejects a bare `varchar` without a length).
       +column_types:
-        country: varchar
-        region: varchar
+        country: string
+        region: string

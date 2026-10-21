@@ -1,7 +1,8 @@
 # AeroFlow Architecture
 
 AeroFlow is a linear ELT pipeline: **extract** the raw OpenFlights files,
-**load** them untouched into DuckDB, then **transform** them in dbt through three
+**load** them untouched into the warehouse (DuckDB by default, or Snowflake or
+Databricks), then **transform** them in dbt through three
 increasingly refined layers before serving them to an Evidence dashboard. Each
 arrow below is a one-way dependency; nothing downstream writes back upstream.
 
@@ -11,10 +12,10 @@ flowchart TD
 
     subgraph ingest["1 · Ingestion (Python)"]
         DL["download.py<br/>idempotent fetch → data/raw/"]
-        LD["load.py<br/>read_csv · \\N → NULL · all VARCHAR<br/>+ _loaded_at"]
+        LD["load.py / load_snowflake.py / load_databricks.py<br/>read_csv · \\N → NULL · all VARCHAR<br/>+ _loaded_at"]
     end
 
-    subgraph raw["2 · Raw (DuckDB schema: raw)"]
+    subgraph raw["2 · Raw (schema: raw)"]
         R1[("raw_airports")]
         R2[("raw_airlines")]
         R3[("raw_routes")]
@@ -70,10 +71,17 @@ flowchart TD
 - **`load.py`** reads each file with DuckDB's `read_csv`, converts the literal
   `\N` token to `NULL`, keeps every column as `VARCHAR`, appends a `_loaded_at`
   timestamp, and writes it to the `raw` schema of `transform/aeroflow.duckdb`.
+- **`load_snowflake.py`** and **`load_databricks.py`** are the cloud
+  equivalents. Both run the exact same DuckDB `read_csv` parse, write each
+  dataset to Parquet, upload it (Snowflake: the `RAW.LANDING` internal stage;
+  Databricks: the `<catalog>.raw.landing` Unity Catalog volume), and create the
+  `raw_*` tables from it with a `_loaded_at` timestamp. The warehouses' own CSV
+  readers are avoided because their defaults turn unquoted empty fields into
+  `NULL` where DuckDB keeps an empty string.
 
-Loading everything as text keeps ingestion robust — no row is ever rejected for a
-bad value; typing and validation are deferred to the staging models where they
-are debuggable in SQL.
+Loading everything as text keeps ingestion robust: no row is ever rejected for a
+bad value, and typing and validation are deferred to the staging models where
+they are debuggable in SQL.
 
 ### 2 · Raw (`raw` schema)
 
@@ -84,14 +92,15 @@ dbt **source freshness** watches.
 
 One cleaned view per source, 1:1 with the raw table:
 
-- rename to `snake_case`, cast types with `try_cast` (portable across DuckDB and
-  Snowflake),
+- rename to `snake_case`, cast types with `try_cast` (portable across DuckDB,
+  Snowflake and Databricks),
 - convert empty strings / `\N` to `NULL`,
 - normalise categoricals (e.g. the airline `active` flag, which mixes `Y`, `N`
   and a stray lowercase `n`),
 - drop structurally broken rows (missing airport ids, self-loop routes).
 
-Materialised as **views** — they are cheap and always reflect the latest raw load.
+Materialised as **views** because they are cheap and always reflect the latest
+raw load.
 
 ### 4 · Intermediate (`models/intermediate/`, tables)
 
@@ -106,12 +115,12 @@ marts.
 
 A small star schema plus three analytical marts:
 
-- **`dim_airport`** / **`dim_airline`** — conformed dimensions (with a region
+- **`dim_airport`** / **`dim_airline`**: conformed dimensions (with a region
   attribute joined from the `seed_region_lookup` seed).
-- **`fct_route`** — the fact table; grain = one row per airline / source /
+- **`fct_route`**: the fact table; grain = one row per airline / source /
   destination, with foreign keys to both dimensions and a `distance_km` measure.
 - **`mart_busiest_airports`**, **`mart_airline_reach`**,
-  **`mart_country_connectivity`** — pre-aggregated answers to the headline
+  **`mart_country_connectivity`**: pre-aggregated answers to the headline
   questions, ready for the dashboard.
 
 ### 6 · Visualisation (`dashboard/`)
@@ -122,16 +131,28 @@ schema directly from the DuckDB file. See [`dashboard/README.md`](../dashboard/R
 ## Portability
 
 The warehouse is swappable: [`transform/profiles.yml`](../transform/profiles.yml)
-defines a `duckdb` target (default) and a `snowflake` target that reads
-credentials from the environment. Because all SQL is ANSI/Snowflake-compatible
-and the one dialect-sensitive piece (the great-circle distance) is isolated in a
-macro using functions common to both engines, `dbt build --target snowflake`
-produces the identical models on Snowflake.
+defines a `duckdb` target (default) plus `snowflake` and `databricks` targets that
+read credentials from the environment. The models run on DuckDB, Snowflake, or
+Databricks by switching that single target, with no SQL changes:
+
+- all SQL sticks to functions every engine shares (`try_cast`, `nullif`, window
+  functions), and the one dialect-sensitive piece, the great-circle distance, is
+  isolated in a macro using trigonometric functions common to all three;
+- the seed declares its columns as `string`, a text type on all three engines;
+- the raw source has no hardcoded database, so it follows the active target
+  (DuckDB `aeroflow`, `SNOWFLAKE_DATABASE`, or `DATABRICKS_CATALOG`).
+
+Raw loading follows the same switch: `python -m pipeline.cli load --target <target>`
+loads DuckDB, Snowflake or Databricks, and `transform --target <target>` builds
+on it.
 
 ## Orchestration & CI
 
 - **`pipeline/cli.py`** (Typer) exposes `ingest`, `load`, `transform` and `all`,
-  runnable as `python -m pipeline.cli all`.
-- **`.github/workflows/ci.yml`** runs on pull requests and on pushes to any
-  branch except `main`: install → `ruff check` → ingest + load → `dbt build`
-  (models **and** tests) → `sqlfluff lint`.
+  runnable as `python -m pipeline.cli all`. `load`, `transform` and `all` take
+  `--target` (`duckdb` by default).
+- **`.github/workflows/ci.yml`** runs once per pull request and on pushes to
+  `main`: install → `ruff check` + `ruff format --check` → ingest + load →
+  `dbt build` (models **and** tests) → `sqlfluff lint`. A second job repeats the load and
+  build on Databricks, but only when the repository has the `DATABRICKS_HOST`,
+  `DATABRICKS_HTTP_PATH` and `DATABRICKS_TOKEN` secrets; otherwise it is skipped.

@@ -1,26 +1,40 @@
 name: CI
 
-# Run on every pull request and on pushes to any branch except main.
+# Run once per pull request (and again on each new commit to it), plus on pushes
+# to main. Feature-branch pushes are covered by their pull request.
 on:
   pull_request:
   push:
-    branches-ignore:
+    branches:
       - main
+
+# The workflow only reads the repository.
+permissions:
+  contents: read
+
+# A newer commit to the same pull request supersedes the run in progress. Runs on
+# main are never cancelled, so every commit to main gets a result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
     name: lint • ingest • dbt build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
+          # Dependencies are installed from pyproject.toml, so key the cache on it.
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
         run: |
@@ -29,6 +43,9 @@ jobs:
 
       - name: Ruff (lint)
         run: ruff check .
+
+      - name: Ruff (format check)
+        run: ruff format --check .
 
       - name: Ingest raw OpenFlights data
         run: python -m pipeline.cli ingest
@@ -45,4 +62,63 @@ jobs:
         run: dbt build --profiles-dir . --target duckdb
 
       - name: SQL lint (sqlfluff)
-        run: sqlfluff lint transform/models
+        run: sqlfluff lint transform/models transform/tests
+
+  # Optional: build the same project on Databricks, but only when the repository
+  # has the DATABRICKS_* secrets (forks and repos without them skip this job).
+  databricks-gate:
+    name: check Databricks secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          HAS_SECRETS: ${{ secrets.DATABRICKS_HOST != '' && secrets.DATABRICKS_HTTP_PATH != '' && secrets.DATABRICKS_TOKEN != '' }}
+        run: echo "enabled=$HAS_SECRETS" >> "$GITHUB_OUTPUT"
+
+  databricks:
+    name: dbt build on Databricks
+    needs: [build, databricks-gate]
+    if: needs.databricks-gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Every run writes the same catalog schemas, so never let two overlap.
+    concurrency:
+      group: databricks-build
+      cancel-in-progress: false
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[databricks]"
+
+      - name: Ingest raw OpenFlights data
+        run: python -m pipeline.cli ingest
+
+      - name: Load into Databricks
+        run: python -m pipeline.cli load --target databricks
+
+      - name: dbt deps
+        working-directory: transform
+        run: dbt deps --profiles-dir .
+
+      - name: dbt build (models + tests)
+        working-directory: transform
+        run: dbt build --profiles-dir . --target databricks

@@ -3,7 +3,7 @@
 A small `typer` app that orchestrates the end-to-end flow:
 
     ingest      download raw OpenFlights files -> data/raw/
-    load        load raw files -> DuckDB (schema `raw`)
+    load        load raw files -> DuckDB, Snowflake or Databricks (schema `raw`)
     transform   run `dbt deps` + `dbt build` (models and tests)
     all         run ingest -> load -> transform in order
 
@@ -12,6 +12,7 @@ Run it as a module:
     python -m pipeline.cli all
     python -m pipeline.cli ingest --force
     python -m pipeline.cli transform --target duckdb
+    python -m pipeline.cli all --target databricks
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ DBT_PROJECT_DIR = PROJECT_ROOT / "transform"
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
-    help="AeroFlow: ingest OpenFlights data, load DuckDB, and build dbt models.",
+    help="AeroFlow: ingest OpenFlights data, load the warehouse, and build dbt models.",
 )
 
 
@@ -61,6 +62,35 @@ def _run_dbt(command: list[str], target: str) -> None:
         raise typer.Exit(code=result.returncode)
 
 
+def _load_raw(target: str) -> None:
+    """Load the raw files into the ``raw`` schema of the warehouse behind ``target``."""
+    if target == "duckdb":
+        load_all()
+        return
+    if target not in ("snowflake", "databricks"):
+        typer.echo(
+            f"[load] no raw loader for target '{target}' "
+            "(supported: duckdb, snowflake, databricks).",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    # The cloud loaders are imported lazily so the default DuckDB flow works
+    # without their optional extras installed.
+    try:
+        if target == "snowflake":
+            from ingestion.load_snowflake import load_all_snowflake as load_cloud
+        else:
+            from ingestion.load_databricks import load_all_databricks as load_cloud
+    except ModuleNotFoundError as exc:
+        typer.echo(
+            f'The {target} target needs the optional extra: pip install -e ".[{target}]"',
+            err=True,
+        )
+        raise typer.Exit(code=1) from exc
+    load_cloud()
+
+
 @app.command()
 def ingest(
     force: bool = typer.Option(False, "--force", help="Re-download even if cached."),
@@ -70,9 +100,13 @@ def ingest(
 
 
 @app.command()
-def load() -> None:
-    """Load the raw files into the DuckDB ``raw`` schema."""
-    load_all()
+def load(
+    target: str = typer.Option(
+        "duckdb", "--target", "-t", help="Warehouse to load: duckdb, snowflake or databricks."
+    ),
+) -> None:
+    """Load the raw files into the ``raw`` schema of the chosen warehouse."""
+    _load_raw(target)
 
 
 @app.command()
@@ -91,7 +125,7 @@ def all(
 ) -> None:
     """Run the whole pipeline: ingest -> load -> transform."""
     download_all(force=force)
-    load_all()
+    _load_raw(target)
     _run_dbt(["deps"], target=target)
     _run_dbt(["build"], target=target)
     typer.echo("[all] pipeline complete.")

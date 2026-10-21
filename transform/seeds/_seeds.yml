@@ -17,6 +17,7 @@ seeds:
         data_tests:
           - not_null
           - accepted_values:
-              values:
-                ["North America", "South America", "Europe", "Africa", "Asia",
-                 "Oceania", "Antarctica"]
+              arguments:
+                values:
+                  ["North America", "South America", "Europe", "Africa", "Asia",
+                   "Oceania", "Antarctica"]

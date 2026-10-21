@@ -4,33 +4,48 @@ version = "1.0.0"
 description = "End-to-end analytics-engineering pipeline over global flight-network data (OpenFlights -> DuckDB -> dbt -> Evidence)."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Omar Rifaie" }]
-keywords = ["analytics-engineering", "dbt", "duckdb", "elt", "openflights", "snowflake"]
+keywords = ["analytics-engineering", "databricks", "dbt", "duckdb", "elt", "openflights", "snowflake"]
 
 # Runtime dependencies needed to ingest data and build the warehouse.
 dependencies = [
     "duckdb>=1.1,<2.0",
     "requests>=2.31,<3.0",
     "typer>=0.12,<1.0",
-    "dbt-core>=1.8,<2.0",
+    # 1.11+ for generic-test `arguments:` and source `config:` freshness.
+    "dbt-core>=1.11,<2.0",
     "dbt-duckdb>=1.8,<2.0",
 ]
 
 [project.optional-dependencies]
-# Quality gates + local tooling (installed in CI and via `make setup`).
+# Quality gates + local tooling (installed in CI and via `make setup`). Capped so
+# a new linter release cannot start failing CI on unrelated changes; ruff is held
+# to one minor because its rules and formatter style change between minors.
 dev = [
-    "ruff>=0.6",
-    "sqlfluff>=3.0",
-    "sqlfluff-templater-dbt>=3.0",
-    "pre-commit>=3.7",
+    "ruff>=0.17,<0.18",
+    "sqlfluff>=4.0,<5.0",
+    "sqlfluff-templater-dbt>=4.0,<5.0",
+    "pre-commit>=3.7,<5.0",
+]
+# The `databricks` dbt target and raw loader. Kept optional because it pulls in
+# pyarrow/pandas, which the default DuckDB flow does not need. dbt-databricks 1.12
+# requires dbt-core >=1.11.2,<1.12.6, so pip settles on dbt-core 1.12.5 here.
+databricks = [
+    "dbt-databricks>=1.12,<1.13",
+    "databricks-sql-connector>=4.1.2,<5.0",
+]
+# The `snowflake` dbt target and raw loader.
+snowflake = [
+    "dbt-snowflake>=1.12,<1.13",
+    "snowflake-connector-python>=4.2,<5.0",
 ]
 
 [project.scripts]
 aeroflow = "pipeline.cli:app"
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]  # SPDX `license = "MIT"` string needs 77+
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]

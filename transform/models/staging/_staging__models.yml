@@ -26,10 +26,19 @@ models:
         description: "Decimal latitude in degrees."
         data_tests:
           - not_null
+          # Out-of-range coordinates would silently corrupt every haversine distance.
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: -90
+                max_value: 90
       - name: longitude
         description: "Decimal longitude in degrees."
         data_tests:
           - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: -180
+                max_value: 180
       - name: altitude_ft
         description: "Airport elevation in feet."
       - name: timezone_offset_hours
@@ -69,7 +78,8 @@ models:
         description: "Normalised active flag: 'Y' (active) or 'N' (defunct)."
         data_tests:
           - accepted_values:
-              values: ["Y", "N"]
+              arguments:
+                values: ["Y", "N"]
       - name: is_active
         description: "Boolean convenience flag, TRUE when the airline is active."
         data_tests:

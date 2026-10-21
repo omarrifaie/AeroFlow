@@ -1,7 +1,7 @@
 -- 1:1 cleaned view over raw airports: snake_case names, typed columns, blanks
 -- and the OpenFlights "\N" token normalised to NULL, and structurally broken
 -- rows (missing airport id) dropped. try_cast keeps the model resilient to the
--- odd unparseable value; it exists with identical semantics on DuckDB and Snowflake.
+-- odd unparseable value; it exists on DuckDB, Snowflake and Databricks.
 with source as (
     select * from {{ source('openflights', 'raw_airports') }}
 ),
